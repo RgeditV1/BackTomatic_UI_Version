@@ -1,10 +1,10 @@
 import threading
-import time
 from pathlib import Path
+
+from core.backup_engine import crear_backup
 
 
 class UIController:
-
     def __init__(self, view):
         self.view = view
         self._ejecutando = False
@@ -12,12 +12,21 @@ class UIController:
     # ================= PUBLICO =================
 
     def iniciar_backup(self):
+        """
+        Método llamado por el botón 'Iniciar Backup'
+        """
 
         if self._ejecutando:
             self.view.append_log("Ya hay un backup en ejecución.")
             return
 
         carpeta = self.view.source_entry.get().strip()
+
+        # -------- VALIDACIONES --------
+        if not carpeta:
+            self.view.append_log("Debes seleccionar una carpeta.")
+            return
+
         ruta = Path(carpeta)
 
         if not ruta.exists():
@@ -32,42 +41,74 @@ class UIController:
             self.view.append_log("La carpeta está vacía.")
             return
 
-
-        if not carpeta:
-            self.view.append_log("Debes seleccionar una carpeta primero.")
-            return
-
-        nivel = self.view.compress_combo.get()
-        encriptar = self.view.encrypt_check.get()
+        # -------- OPCIONES UI --------
+        nivel_ui = self.view.compress_combo.get()
+        excluir_temporales = self.view.exclude_tmp.get()
+        encriptar = self.view.encrypt_check.get()  # (todavía no se usa)
 
         self.view.append_log("Preparando backup...")
-        self.view.append_log(f"Nivel de compresión: {nivel}")
-        self.view.append_log(f"Encriptación: {'Sí' if encriptar else 'No'}")
+        self.view.append_log(f"Excluir temporales: {'Sí' if excluir_temporales else 'No'}")
+        self.view.append_log(f"Nivel de compresión: {nivel_ui}")
 
+        # -------- BLOQUEAR EJECUCIÓN --------
         self._ejecutando = True
 
+        # -------- HILO --------
         hilo = threading.Thread(
-            target=self._proceso_backup,
-            args=(carpeta, nivel, encriptar),
+            target=self._backup_real,
+            args=(ruta, nivel_ui, excluir_temporales),
             daemon=True
         )
         hilo.start()
 
     # ================= INTERNO =================
 
-    def _proceso_backup(self, carpeta, nivel, encriptar):
+    def _backup_real(self, ruta: Path, nivel_ui: str, excluir_temporales: bool):
+        """
+        Ejecuta el backup real (ZIP)
+        """
 
-        pasos = [
-            ("Analizando archivos...", 0.10),
-            ("Comprimiendo...", 0.35),
-            ("Creando archivo ZIP...", 0.55),
-            ("Conectando con Google Drive...", 0.70),
-            ("Subiendo backup...", 0.90),
-            ("Backup completado", 1.0),
-        ]
+        try:
+            self.view.after(
+                0,
+                self.view.actualizar_estado,
+                "Comprimiendo archivos...",
+                0.1
+            )
 
-        for texto, progreso in pasos:
-            time.sleep(1.2)
-            self.view.after(0, self.view.actualizar_estado, texto, progreso)
+            # -------- MAPEO NIVEL --------
+            mapa_nivel = {
+                "Bajo (ZIP)": 1,
+                "Medio (ZIP)": 5,
+                "Alto (ZIP)": 9,
+            }
 
-        self._ejecutando = False
+            nivel_real = mapa_nivel.get(nivel_ui, 5)
+
+            # -------- DESTINO --------
+            destino_zip = ruta.parent / "backup.zip"
+
+            # -------- CREAR ZIP --------
+            total_archivos = crear_backup(
+                carpeta_origen=ruta,
+                destino_zip=destino_zip,
+                nivel_compresion=nivel_real,
+                excluir_temporales=excluir_temporales,
+            )
+
+            # -------- FINAL --------
+            self.view.after(
+                0,
+                self.view.actualizar_estado,
+                f"{total_archivos} archivos comprimidos",
+                1.0
+            )
+
+            self.view.append_log(f"Backup creado correctamente.")
+            self.view.append_log(f"Ubicación: {destino_zip}")
+
+        except Exception as e:
+            self.view.append_log(f"Error durante el backup: {e}")
+
+        finally:
+            self._ejecutando = False
