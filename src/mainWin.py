@@ -2,7 +2,6 @@ import customtkinter as ctk
 import tkinter.filedialog as filedialog
 from datetime import datetime
 from pathlib import Path
-import os
 
 from PIL import Image, ImageTk, ImageSequence
 

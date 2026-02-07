@@ -1,5 +1,4 @@
 from __future__ import print_function
-import os
 from pathlib import Path
 from tkinter import filedialog, messagebox
 from google.auth.transport.requests import Request
