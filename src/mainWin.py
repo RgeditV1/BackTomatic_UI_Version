@@ -33,7 +33,7 @@ class MainWin(ctk.CTk):
 
         self.title_lbl = ctk.CTkLabel(
             self.header,
-            text="Gestor de Backups",
+            text="BACKTOMATIC",
             font=("Segoe UI", 26, "bold")
         )
         self.title_lbl.pack(anchor="w", padx=20, pady=(15, 0))
@@ -92,10 +92,10 @@ class MainWin(ctk.CTk):
 
 
         self.exclude_tmp = ctk.CTkCheckBox(inner, text="Excluir archivos temporales")
-        self.exclude_tmp.grid(row=0, column=2, padx=20)
+        self.exclude_tmp.grid(row=0, column=2, padx=20, sticky="w")
 
         self.encrypt_check = ctk.CTkCheckBox(inner, text="Habilitar encriptación")
-        self.encrypt_check.grid(row=1, column=2, padx=20, pady=5)
+        self.encrypt_check.grid(row=1, column=2, padx=20, pady=5, sticky="w")
 
         # ---------- BOTÓN INICIAR ----------
         self.start_btn = ctk.CTkButton(
