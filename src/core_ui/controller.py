@@ -1,22 +1,40 @@
 import threading
 from pathlib import Path
+import os
+
+from core.drive_auth import get_drive_service
+from googleapiclient.http import MediaFileUpload
 
 from core.backup_engine import crear_backup
 from core_ui.password_dialog import PasswordDialog
 
-class UIController:
-    def __init__(self, view):
-        self.view = view
-        self._ejecutando = False
 
-    # ================= PUBLICO =================
+
+class UIController:
+    def __init__(self, ui):
+        self.ui = ui
+
     def subir_a_drive(self, ruta_zip):
-        if self._ejecutando:
-            self.view.append_log("No se puede subir mientras se ejecuta un backup.")
+        service = get_drive_service()
+        if not service:
+            self.ui.append_log("No se pudo autenticar con Google Drive.")
+            self.ui.drive_status.configure(text="● Error de conexión a Drive")
             return
 
-        self.view.append_log(f"Subiendo {ruta_zip} a Google Drive...")
-        # Aquí iría la integración con la API de Google Drive
+        try:
+            file_metadata = {'name': os.path.basename(ruta_zip)}
+            media = MediaFileUpload(ruta_zip, mimetype='application/zip')
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id'
+            ).execute()
+
+            self.ui.append_log(f"Backup subido a Drive con ID: {file.get('id')}")
+            self.ui.drive_status.configure(text="● Conectado a Google Drive")
+        except Exception as e:
+            self.ui.append_log(f"Error al subir a Drive: {e}")
+            self.ui.drive_status.configure(text="● Error de subida")
 
 
 
