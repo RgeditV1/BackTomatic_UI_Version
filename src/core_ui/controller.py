@@ -10,6 +10,15 @@ class UIController:
         self._ejecutando = False
 
     # ================= PUBLICO =================
+    def subir_a_drive(self, ruta_zip):
+        if self._ejecutando:
+            self.view.append_log("No se puede subir mientras se ejecuta un backup.")
+            return
+
+        self.view.append_log(f"Subiendo {ruta_zip} a Google Drive...")
+        # Aquí iría la integración con la API de Google Drive
+
+
 
     def iniciar_backup(self):
         """Método llamado por el botón 'Iniciar Backup'"""
@@ -19,6 +28,7 @@ class UIController:
             return
 
         carpeta = self.view.source_entry.get().strip()
+        
 
         # -------- VALIDACIONES --------
         if not carpeta:
@@ -75,6 +85,8 @@ class UIController:
     def _backup_real(self, ruta: Path, nivel_ui: str, excluir_temporales: bool,
                      encriptar: bool, password: str):
         """Ejecuta el backup real con progreso"""
+        self.view.start_btn.configure(state="disabled")
+        self.view.drive_btn.configure(state="disabled")
 
         try:
             mapa_nivel = {
@@ -125,5 +137,9 @@ class UIController:
             self.view.append_log(f"Error durante el backup: {e}")
 
         finally:
+            self.view.start_btn.configure(state="normal")
+            if self.view.zip_entry.get().strip():
+                self.view.drive_btn.configure(state="normal")
+
             self._ejecutando = False
 

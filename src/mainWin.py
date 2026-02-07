@@ -22,6 +22,23 @@ class MainWin(ctk.CTk):
 
         # Conectar controlador
         self.controller = UIController(self)
+        
+    def on_browse_zip(self):
+        archivo = filedialog.askopenfilename(
+            filetypes=[("Archivos ZIP", "*.zip")]
+            )
+        if archivo:
+            self.zip_entry.delete(0, "end")
+            self.zip_entry.insert(0, archivo)
+            self.drive_btn.configure(state="normal")
+
+    def on_upload_drive(self):
+        ruta_zip = self.zip_entry.get().strip()
+        if not ruta_zip:
+            self.append_log("Debes seleccionar un archivo ZIP.")
+            return
+        self.controller.subir_a_drive(ruta_zip)
+
 
     # ================= INTERFAZ =================
 
@@ -48,17 +65,32 @@ class MainWin(ctk.CTk):
         self.source_frame = ctk.CTkFrame(self)
         self.source_frame.pack(fill="x", padx=10, pady=5)
 
-        ctk.CTkLabel(self.source_frame, text="Carpeta origen:").pack(side="left", padx=10)
+        ctk.CTkLabel(self.source_frame, text="Carpeta origen:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
 
         self.source_entry = ctk.CTkEntry(self.source_frame, width=520)
-        self.source_entry.pack(side="left", padx=5)
+        self.source_entry.grid(row=0, column=1, padx=5, pady=5)
 
         ctk.CTkButton(
             self.source_frame,
             text="Explorar...",
             width=100,
             command=self.on_browse
-        ).pack(side="left", padx=5)
+        ).grid(row=0, column=2, padx=5, pady=5)
+
+        # ---------- ARCHIVO ZIP ----------
+        ctk.CTkLabel(self.source_frame, text="Archivo ZIP:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+
+        self.zip_entry = ctk.CTkEntry(self.source_frame, width=520)
+        self.zip_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        ctk.CTkButton(
+            self.source_frame,
+            text="Buscar ZIP...",
+            width=100,
+            command=self.on_browse_zip
+        ).grid(row=1, column=2, padx=5, pady=5)
+
+
 
         # ---------- OPCIONES ----------
         self.options_frame = ctk.CTkFrame(self)
@@ -101,13 +133,29 @@ class MainWin(ctk.CTk):
         self.start_btn = ctk.CTkButton(
             self.options_frame,
             text="Iniciar Backup",
-            height=42,
+            height=60,
+            width=200,
             fg_color="#2fa84f",
             hover_color="#23843e",
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 18, "bold"),
             command=self.on_start
         )
-        self.start_btn.pack(pady=10)
+        self.start_btn.pack(side="left", padx=10, pady=10)
+
+        #DRIVEEEE
+        self.drive_btn = ctk.CTkButton(
+            self.options_frame,
+            text="Subir a Drive",
+            height=60,
+            width=200,
+            fg_color="#4285F4",
+            hover_color="#3367D6",
+            font=("Segoe UI", 18, "bold"),
+            command=self.on_upload_drive
+        )
+        self.drive_btn.pack(side="right", padx=10, pady=10)
+        self.drive_btn.configure(state="disabled")
+
 
         # ---------- CENTRO ----------
         self.center = ctk.CTkFrame(self)
