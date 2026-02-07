@@ -1,6 +1,9 @@
 import customtkinter as ctk
 import tkinter.filedialog as filedialog
 from datetime import datetime
+from pathlib import Path
+
+from PIL import Image, ImageTk, ImageSequence
 
 from core_ui.controller import UIController
 from core_ui.tooltip import ToolTip
@@ -11,13 +14,19 @@ class MainWin(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        ctk.set_appearance_mode("light")
+        ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        self.title("Gestor de Backups")
+        self.title("BackTomatic - Backup Automático")
+
+        self.iconbitmap(Path.cwd().joinpath("src","img","ico.ico").resolve())
+
         self.geometry("920x600")
+        
         self.resizable(False, False)
 
+        
+        
         self.build_ui()
 
         # Conectar controlador
@@ -43,23 +52,33 @@ class MainWin(ctk.CTk):
     # ================= INTERFAZ =================
 
     def build_ui(self):
+        gifPth = Path.cwd().joinpath("src","gift","trainloop.gif").resolve()
+
 
         # ---------- CABECERA ----------
         self.header = ctk.CTkFrame(self, height=90, corner_radius=8)
         self.header.pack(fill="x", padx=10, pady=(10, 5))
 
-        self.title_lbl = ctk.CTkLabel(
-            self.header,
-            text="BACKTOMATIC",
-            font=("Segoe UI", 26, "bold")
-        )
-        self.title_lbl.pack(anchor="w", padx=20, pady=(15, 0))
+        # ---------- GIF animado en esquina derecha ----------
+        # Cargar GIF con Pillow
+        gif = Image.open(gifPth)
+        self.gif_frames = [
+            ImageTk.PhotoImage(frame.copy().resize((900, 80), Image.Resampling.LANCZOS))
+            for frame in ImageSequence.Iterator(gif)
+            ]
+        
+        self.gif_lbl = ctk.CTkLabel(self.header, text="", image=self.gif_frames[0])
+        self.gif_lbl.pack(side="left", padx=20, pady=10)
 
-        self.subtitle = ctk.CTkLabel(
-            self.header,
-            text="Backup automático y subida a la nube"
-        )
-        self.subtitle.pack(anchor="w", padx=20)
+        def update_gif(ind=0):
+            frame = self.gif_frames[ind]
+            self.gif_lbl.configure(image=frame)
+            ind = (ind + 1) % len(self.gif_frames)
+            self.after(100, update_gif, ind)  # cada 100 ms
+
+        update_gif()
+
+
 
         # ---------- CARPETA ORIGEN ----------
         self.source_frame = ctk.CTkFrame(self)
